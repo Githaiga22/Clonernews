@@ -103,4 +103,4 @@ This project is licensed under the MIT License.
 
 #### Contact
 
-For questions or suggestions, feel free to contact the project maintainers mensioned above.
+For questions or suggestions, feel free to contact any of the project maintainers mensioned above. 
