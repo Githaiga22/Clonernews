@@ -235,4 +235,88 @@ const displayData = (story, index) => {
     // Append the entire story div (with all its content) to the main container
     container.append(storyDiv);
 };
+// Function to handle the fetching and displaying of stories
+const handleStories = (e) => {
+    // Logs the event data when the function is triggered (for debugging purposes)
+    console.log(e);
+
+    // Select all div elements inside the container with class 'main-container-class'
+    let notIncluded = document.querySelectorAll(`.main-container-class div`);
+    
+    // Remove each of the selected elements from the DOM
+    notIncluded.forEach((element) => {
+        element.remove();
+    });
+
+    // Asynchronous function to fetch and return the story data
+    const getStoriesData = async () => {
+        // Fetches the list of story IDs for 'show' stories from the Hacker News API
+        const showStoriesData = await fetch(
+            'https://hacker-news.firebaseio.com/v0/showstories.json?print=pretty'
+        );
+
+        // Convert the response to JSON format
+        const sData = await showStoriesData.json();
+
+        // Sort the story IDs in descending order
+        const sortedData = [...sData].sort((a, b) => (a > b ? -1 : 1));
+
+        // Fetch detailed data for each story ID concurrently
+        const showStories = await Promise.all(
+            sortedData.map((storyId) =>
+                fetch(
+                    `https://hacker-news.firebaseio.com/v0/item/${storyId}.json?print=pretty`
+                ).then((showStory) => showStory.json())
+            )
+        );
+
+        // Return the fetched story details
+        return showStories;
+    };
+
+    // Calls the async function and processes the fetched stories
+    getStoriesData().then((showStories) => {
+        // Iterate over each story and pass it to the displayData function for rendering
+        showStories.forEach((story, index) => {
+            console.log(story); // Log each story for debugging purposes
+            displayData(story, index); // Render the story on the page
+        });
+    });
+};
+
+// Function to display a poll option if it is neither dead nor deleted
+const displayPollOption = (option) => {
+    // Exit the function if the option is marked as dead or deleted
+    if (option.dead === true || option.deleted === true) {
+        return;
+    }
+
+    // Get the parent poll element by the poll ID from the option
+    const parent = document.getElementById(option.poll);
+
+    // Log the parent poll element (for debugging)
+    console.log(parent);
+
+    // Create a new div element to represent the poll option
+    const optionDiv = document.createElement('div');
+
+    // Create another div to hold the text and score of the poll option
+    const optionContent = document.createElement('div');
+    
+    // Set the inner HTML of the content div to display the text and score
+    optionContent.innerHTML = `${option.text}: ${option.score}`;
+
+    // Add a class to the content div for styling
+    optionContent.className = 'content-class';
+
+    // Set the ID and class for the poll option div
+    optionDiv.id = option.id;
+    optionDiv.className = 'poll-divclass';
+
+    // Append the content div inside the poll option div
+    optionDiv.append(optionContent);
+
+    // Append the poll option div to the parent poll element
+    parent.append(optionDiv);
+};
 
