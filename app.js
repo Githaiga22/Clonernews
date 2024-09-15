@@ -145,3 +145,94 @@ const handleComments = (commentIds) => {
         });
     });
 };
+// Define a function to display story data, where 'story' is an object containing story info, and 'index' is the position of the story
+const displayData = (story, index) => {
+    // Check if the story is marked as dead or deleted, and return early if true (skip rendering)
+    if (story.dead || story.deleted) {
+        return; // Exit the function if the story is dead or deleted
+    }
+
+    // Select the main container where all stories will be appended
+    const container = document.querySelector('.main-container-class');
+    
+    // Create a new div element to hold the story content
+    const storyDiv = document.createElement('div');
+    
+    // Create an anchor element to wrap the story title (used for linking to the story URL)
+    const storyLink = document.createElement('a');
+    
+    // Create an h3 element to display the story title
+    const storyHead = document.createElement('h3');
+    
+    // Create a div element to hold the story content (text) if it exists
+    const storyContent = document.createElement('div');
+    
+    // Create a div to display the story's author and the time it was posted
+    const storyAuthor = document.createElement('div');
+    
+    // Create a button element for displaying the number of comments (if the story has comments)
+    const storyComment = document.createElement('button');
+
+    // If the story has a URL, set the anchor's href attribute to the URL and open it in a new tab
+    if (story.url) {
+        storyLink.href = story.url;       // Set the link's destination URL
+        storyLink.target = '_blank';      // Open the link in a new tab
+    }
+
+    // If the story has text content, set it inside the storyContent div and add a class for styling
+    if (story.text) {
+        storyContent.innerHTML = story.text;   // Add the story's text content
+        storyContent.className = 'content-class';  // Assign a class to the content div for styling
+    }
+
+    // Set the story's author and the time it was posted using the timeConverter function
+    storyAuthor.innerHTML = `<span><b>@${story.by}</b> ${timeConverter(story.time)}</span>`;
+
+    // Set a data attribute for the story type and assign an ID to the story div
+    storyDiv.setAttribute('data-type', `${story.type}`);  // Add data attribute to store the type of story (e.g., 'story', 'comment')
+    storyDiv.id = story.id;  // Set the unique story ID for the div
+
+    // Add a class for the div to style the story element
+    storyDiv.className = 'story-div-class';  // Assign a class for styling the story div
+    
+    // If the story index is greater than or equal to 10, hide the story (could be for lazy loading or pagination)
+    if (index >= 10) storyDiv.classList.add('hide');  // Hide the story if its index is 10 or above
+
+    // Set the story title text in the h3 element
+    storyHead.textContent = story.title;  // Set the story title in the h3 element
+
+    // Append the story title (h3) inside the anchor (link) element
+    storyLink.append(storyHead);
+
+    // Append the link (with the title) to the story div
+    storyDiv.append(storyLink);
+
+    // Append the author's information and the story content to the story div
+    storyDiv.append(storyAuthor);   // Add the author and time info to the story div
+    storyDiv.append(storyContent);  // Add the story's text content (if any)
+
+    // If the story has comments (kids), create a button to display the number of comments
+    if (story.kids) {
+        // Set the button text to display the number of comments (handle singular/plural cases)
+        storyComment.textContent = `${story.kids.length} Comment${story.kids.length > 1 ? 's' : ''}`;
+
+        // Append the comment button to the story div
+        storyDiv.append(storyComment);
+
+        // Add a class to the comment button for styling
+        storyComment.className = 'btn';  // Assign a class to the button for styling
+
+        // Add an event listener to load the comments when the button is clicked
+        storyComment.addEventListener(
+            'click',  // Listen for the 'click' event on the button
+            () => {
+                handleComments(story.kids);  // Call handleComments function with the list of comment IDs
+            },
+            { once: true }  // Ensure the button can only be clicked once
+        );
+    }
+
+    // Append the entire story div (with all its content) to the main container
+    container.append(storyDiv);
+};
+
