@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="stylesheet" href="app.css" />
+        <title>Cloner News</title>
+    </head>
+    <body onload="fetchMaxId()">
+        <h1 id="title-id">Tech <span style="color: #7834f7">News</span></h1>
+        <nav class="nav-container-class">
+            <button onclick="handleNew()" class="new">New</button>
+            <!-- <button onclick="handleAll()">All</button> -->
+            <button class="stories">Stories</button>
+            <button class="jobs">Jobs</button>
+            <button class="polls">Polls</button>
+        </nav>
+        <div class="main-container-class"></div>
+        <button class="show-more" onclick="handleMore()">Show more...</button>
+        <script src="main.js"></script>
+    </body>
+</html>
