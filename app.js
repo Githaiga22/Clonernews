@@ -319,4 +319,128 @@ const displayPollOption = (option) => {
     // Append the poll option div to the parent poll element
     parent.append(optionDiv);
 };
+// This function handles the poll options for each poll by fetching poll options data.
+const handlePollOption = (pollOptions) => {
+    // Fetch the details for each poll option by its ID.
+    const getPollsOption = async (pollOptions) => {
+        // Log the array of poll options to the console.
+        console.log(pollOptions);
+        // Fetch data for each poll option in parallel using Promise.all and map.
+        const showPollsOption = await Promise.all(
+            pollOptions.map((newPollOptId) =>
+                // Fetch each poll option's data from the Hacker News API and convert it to JSON.
+                fetch(`https://hacker-news.firebaseio.com/v0/item/${newPollOptId}.json?print=pretty`)
+                    .then((showItem) => showItem.json())
+            )
+        );
+        // Return the fetched poll options data.
+        return showPollsOption;
+    };
+
+    // Call getPollsOption and handle the data once it's fetched.
+    getPollsOption(pollOptions).then((options) => {
+        // Iterate over each poll option and display it on the page.
+        options.forEach((option) => {
+            displayPollOption(option);  // Function that displays each poll option.
+        });
+    });
+};
+
+// This function displays a poll and its details on the page.
+const displayPoll = (poll, index) => {
+    // Skip displaying polls that are either deleted or marked dead.
+    if (poll.dead || poll.deleted) {
+        return;
+    }
+
+    // Get the container where the poll will be appended.
+    const container = document.querySelector('.main-container-class');
+
+    // Create elements to display the poll.
+    const pollDiv = document.createElement('div');  // Main poll container.
+    const pollLink = document.createElement('a');   // Link to the poll.
+    const pollHead = document.createElement('h3');  // Poll title (as a heading).
+    const pollContent = document.createElement('div');  // Content section for poll text.
+    const pollAuthor = document.createElement('div');   // Displays poll author and time.
+    const pollComment = document.createElement('button');  // Button to view comments.
+
+    // If the poll has a URL, set it as the link's href and open it in a new tab.
+    if (poll.url) {
+        pollLink.href = poll.url;
+        pollLink.target = '_blank';
+    }
+
+    // If the poll has text content, display it in the content div.
+    if (poll.text) {
+        pollContent.innerHTML = poll.text;
+        pollContent.className = 'content-class';  // Apply styles to the content.
+        pollDiv.append(pollContent);  // Append the content to the main poll container.
+    }
+
+    // Handle poll options (if available) by fetching their data.
+    handlePollOption(poll.parts);
+
+    // Set the poll author and time, and append it to the main poll container.
+    pollAuthor.innerHTML = `<span><b>@${poll.by}</b> ${timeConverter(poll.time)}</span>`;
+    pollDiv.setAttribute('data-type', poll.type);  // Set data attribute for the poll type.
+    pollDiv.id = poll.id;  // Set poll ID.
+    pollDiv.className = 'story-div-class';  // Apply styling to the poll container.
+
+    // Hide polls that are beyond the 10th item by default (optional functionality).
+    if (index >= 10) pollDiv.classList.add('hide');
+
+    // Set the poll title and add it as a link to the container.
+    pollHead.textContent = poll.title;
+    pollLink.append(pollHead);
+    pollDiv.prepend(pollLink);  // Add the link to the beginning of the poll container.
+    pollDiv.prepend(pollAuthor);  // Add the author before the poll title.
+
+    // Handle comments section if there are any comments (kids array).
+    if (poll.kids) {
+        pollComment.textContent = poll.kids.length === 1 ? `${poll.kids.length} Comment` : `${poll.kids.length} Comments`;
+        pollDiv.append(pollComment);  // Add comment button to the poll.
+        pollComment.className = 'btn';  // Style the comment button.
+        
+        // Add an event listener to load comments when the button is clicked.
+        pollComment.addEventListener('click', () => {
+            handleComments(poll.kids);  // Function to handle and display comments.
+        }, { once: true });  // Event listener fires only once.
+    }
+
+    // Append the fully constructed pollDiv to the main container.
+    container.append(pollDiv);
+};
+
+// This function handles fetching and displaying a set of polls.
+const handlePolls = () => {
+    // Select and remove any existing polls from the main container.
+    let notIncluded = document.querySelectorAll('.main-container-class div');
+    notIncluded.forEach((element) => {
+        element.remove();  // Remove each poll element to refresh the display.
+    });
+
+    // Array of specific poll IDs to be fetched from the Hacker News API.
+    const polls = [31891675, 31869104, 31788898, 31780911, 31716715, 31598236, 31587976];
+
+    // Fetch the details for each poll ID in the array.
+    const getPollsData = async (polls) => {
+        // Fetch all poll data in parallel using Promise.all and map.
+        const showPolls = await Promise.all(
+            polls.map((newPollId) =>
+                // Fetch each poll's data from the API and convert it to JSON.
+                fetch(`https://hacker-news.firebaseio.com/v0/item/${newPollId}.json?print=pretty`)
+                    .then((showItem) => showItem.json())
+            )
+        );
+        // Return the fetched poll data.
+        return showPolls;
+    };
+
+    // Call getPollsData and once the data is fetched, display each poll.
+    getPollsData(polls).then((newPolls) => {
+        newPolls.forEach((poll, index) => {
+            displayPoll(poll, index);  // Function to display each poll with its index.
+        });
+    });
+};
 
