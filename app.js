@@ -443,4 +443,142 @@ const handlePolls = () => {
         });
     });
 };
+// Function to handle the display of more stories when a button is clicked.
+const handleMore = () => {
+    // Select all elements with the class 'story-div-class' and convert the NodeList to an array.
+    const stories = [...document.querySelectorAll('.story-div-class')];
+    
+    // Iterate over the stories to find the first visible story that is followed by a hidden story.
+    stories.some((story, i, arr) => {
+        // Check if the current story is not hidden and the next story is hidden.
+        if (!story.classList.contains('hide') && arr[i + 1]?.classList.contains('hide')) {
+            // Unhide the next 10 stories or until the end of the array.
+            for (let j = i + 1; j <= i + 10 && arr[j]; j++) {
+                arr[j].classList.remove('hide');
+                // Hide the 'show more' button if there are no more stories to display.
+                if (!arr[j + 1]) {
+                    document.querySelector('.show-more').classList.add('hide');
+                }
+            }
+            return true; // Stop iterating once we find the first visible story followed by hidden stories.
+        }
+        return false; // Continue to the next story.
+    });
+};
+let inMaxId;
+let currMaxId;
+
+// Function to fetch the maximum item ID from the Hacker News API periodically.
+const fetchMaxId = () => {
+    fetch('https://hacker-news.firebaseio.com/v0/maxitem.json?print=pretty')
+        .then((response) => response.json())  // Convert the response to JSON.
+        .then((maxId) => {
+            // Store the initial max ID and the current max ID for comparison.
+            if (inMaxId === undefined) {
+                inMaxId = maxId;
+            } else {
+                currMaxId = maxId;
+            }
+
+            // If both IDs are set and different, indicate new items are available.
+            if (inMaxId && currMaxId && inMaxId !== currMaxId) {
+                const newIdElement = document.querySelector('.new');
+                newIdElement.style.background = '#f73458'; // Change background color to indicate new items.
+            }
+
+            // Schedule the next fetch after 5 seconds.
+            setTimeout(() => fetchMaxId(), 5000);
+        });
+};
+// Function to handle and display new items between the max ID values.
+const handleNew = () => {
+    // Remove existing items from the main container.
+    document.querySelectorAll('.main-container-class div').forEach((element) => {
+        element.remove();
+    });
+
+    // Generate an array of new item IDs between the previous and current max IDs.
+    const newItems = [];
+    for (let i = inMaxId; i <= currMaxId; i++) {
+        newItems.unshift(i);
+    }
+
+    // Function to fetch data for new items.
+    const getItemsData = async (itemIds) => {
+        const itemsData = await Promise.all(
+            itemIds.map((itemId) =>
+                fetch(`https://hacker-news.firebaseio.com/v0/item/${itemId}.json?print=pretty`)
+                    .then((response) => response.json())
+            )
+        );
+        return itemsData;
+    };
+
+    // Fetch and display new items.
+    getItemsData(newItems).then((items) => {
+        items.forEach((item) => {
+            // Skip items that are not valid or are deleted.
+            if (!item.type || item.dead || item.deleted) {
+                return;
+            }
+            // Display the item based on its type.
+            if (item.type === 'story' || item.type === 'job') {
+                displayData(item);
+            } else if (item.type === 'poll') {
+                displayPoll(item);
+            } else if (item.type === 'comment') {
+                displayComments(item);
+            } else {
+                console.log(item); // Log any unexpected item types.
+            }
+        });
+    });
+
+    // Update the max ID to the current max ID and reset the 'new' indicator.
+    inMaxId = currMaxId;
+    const newIdElement = document.querySelector('.new');
+    newIdElement.style.background = 'buttonface'; // Reset background color.
+};
+// Function to fetch and display job stories.
+const handleJobs = () => {
+    // Remove existing items from the main container.
+    document.querySelectorAll('.main-container-class div').forEach((element) => {
+        element.remove();
+    });
+
+    // Function to fetch job stories data.
+    const getStoriesData = async () => {
+        const response = await fetch('https://hacker-news.firebaseio.com/v0/jobstories.json?print=pretty');
+        const storyIds = await response.json();
+        
+        // Sort story IDs in descending order.
+        const sortedIds = [...storyIds].sort((a, b) => b - a);
+
+        // Fetch details for each job story.
+        const storiesData = await Promise.all(
+            sortedIds.map((storyId) =>
+                fetch(`https://hacker-news.firebaseio.com/v0/item/${storyId}.json?print=pretty`)
+                    .then((response) => response.json())
+            )
+        );
+        return storiesData;
+    };
+
+    // Fetch and display job stories.
+    getStoriesData().then((stories) => {
+        stories.forEach((story, index) => {
+            console.log(story); // Log each story for debugging.
+            displayData(story, index);
+        });
+    });
+};
+// Select buttons for different actions.
+const storiesBtn = document.querySelector('.stories');
+const jobsBtn = document.querySelector('.jobs');
+const pollsBtn = document.querySelector('.polls');
+
+// Add event listeners to buttons with throttling to limit the frequency of function calls.
+storiesBtn.addEventListener('click', throttle(handleStories, 5000));
+jobsBtn.addEventListener('click', throttle(handleJobs, 5000));
+pollsBtn.addEventListener('click', throttle(handlePolls, 5000));
 
